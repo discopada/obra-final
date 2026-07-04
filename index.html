@@ -107,7 +107,6 @@
     const ARCHIVO_FOTO = "JM.png"; 
     const STABILITY_API_KEY = "sk-5QJtiXso4yWluFBngucfD7zqDFs6nMWd9c0imF7D731CwiFa"; 
 
-    // BANCO DE DATOS CONCEPTUAL (Simula los discursos que circulan en internet)
     const discursosInternet = [
       {
         consola: "[SISTEMA]: Rastreando tendencias en X y transmisiones de streaming...\n[DATOS]: Detectada alta densidad de términos: 'Motosierra', 'Déficit Cero', 'León', 'Libertad'.",
@@ -161,7 +160,7 @@
     function actualizarInterfaz() {
       $('cHuman').textContent = state.countHuman;
       $('cIA').textContent = state.countIA;
-      renderuzarHistorial();
+      renderizarHistorial();
     }
 
     function glitch() {
@@ -223,7 +222,6 @@
         return;
       }
 
-      // Seleccionamos un discurso aleatorio del banco de datos
       const discursoElegido = discursosInternet[Math.floor(Math.random() * discursosInternet.length)];
 
       setLoading(true, "Rastreando menciones y discursos en la red...");
@@ -236,7 +234,6 @@
         const formData = new FormData();
         formData.append("image", blob);
         
-        // PROMPT CONCEPTUAL COMPUESTO: Une la base técnica limpia con los conceptos discursivos seleccionados
         const promptFinal = `subtle anatomical alteration of man face identity, male portrait modification, ${discursoElegido.promptIA}, net art style facial transformation, preserving baseline male bone structure`;
         
         formData.append("prompt", promptFinal);
@@ -291,7 +288,7 @@
       actualizarInterfaz();
     }
 
-    function renderuzarHistorial() {
+    function renderizarHistorial() {
       const grid = $('historyGrid');
       grid.innerHTML = '';
 
