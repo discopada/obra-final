@@ -115,7 +115,9 @@
 
   <script>
     const ARCHIVO_FOTO = "JM.png"; 
-    const HF_TOKEN = "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"; 
+    
+    // Dejamos esto vacío para que GitHub no bloquee el deploy. El sistema lo pedirá dinámicamente en el navegador.
+    let hfTokenDinamico = ""; 
 
     const discursosInternet = [
       {
@@ -228,9 +230,15 @@
     }
 
     async function manejarIntervencionIA() {
-      if (HF_TOKEN === "") {
-        $('feedback').textContent = "Error: Falta configurar el HF_TOKEN gratuito en el código.";
-        return;
+      // Si no tenemos el token ingresado, lo pedimos de manera dinámica mediante prompt
+      if (!hfTokenDinamico || hfTokenDinamico.trim() === "") {
+        const userKey = prompt("[ACCESO REQUERIDO]: Por favor, ingrese el Access Token de Hugging Face (hf_...) para conectar la obra con el sistema de inferencia:");
+        if (userKey && userKey.trim().startsWith("hf_")) {
+          hfTokenDinamico = userKey.trim();
+        } else {
+          $('feedback').textContent = "[ERROR DE AUTENTICACIÓN]: Token inválido o cancelado por el operador. No se puede conectar con el sistema de inferencia digital.";
+          return;
+        }
       }
 
       const palabraInyectada = $('userWord').value.trim();
@@ -260,7 +268,7 @@
           "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
           {
             headers: { 
-              Authorization: `Bearer ${HF_TOKEN}`,
+              Authorization: `Bearer ${hfTokenDinamico}`,
               "Content-Type": "application/json"
             },
             method: "POST",
@@ -269,7 +277,11 @@
         );
 
         if (!response.ok) {
-          throw new Error("El servidor gratuito está sobrecargado o el token es inválido. Reintentá en unos segundos.");
+          if (response.status === 401) {
+            hfTokenDinamico = ""; // Reseteamos si el token ingresado era erróneo
+            throw new Error("El token ingresado no es válido en los servidores de Hugging Face.");
+          }
+          throw new Error("El servidor gratuito está sobrecargado. Reintentá en unos segundos.");
         }
 
         const imageBlob = await response.blob();
