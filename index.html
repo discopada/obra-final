@@ -1,0 +1,172 @@
+<script>
+  // Cambiá "foto.avif" por el nombre exacto de tu archivo de imagen
+  const ARCHIVO_FOTO = "foto.avif"; 
+
+  // Variables de Estado de la Obra
+  const state = {
+    version: 0,
+    countHuman: 0,
+    countIA: 0,
+    history: [], 
+    currentSrc: ARCHIVO_FOTO // Ahora usa el archivo directo
+  };
+
+  const $ = id => document.getElementById(id);
+
+  // Inicialización de la imagen y los eventos al cargar la página
+  window.addEventListener('DOMContentLoaded', () => {
+    $('mainImg').src = state.currentSrc; // <--- Esto hace que la foto se vea apenas abrís la página
+    actualizarInterfaz();
+    
+    $('btnKeep').addEventListener('click', manejarDecisionHumana);
+    $('btnIA').addEventListener('click', manejarIntervencionIA);
+  });
+
+  // Actualizaciones de la interfaz de usuario
+  function actualizarInterfaz() {
+    $('vNum').textContent = state.version;
+    $('cHuman').textContent = state.countHuman;
+    $('cIA').textContent = state.countIA;
+    
+    if (state.version === 0) {
+      $('vDesc').textContent = "imagen original";
+    } else {
+      const ultimo = state.history[state.history.length - 1];
+      $('vDesc').textContent = ultimo.isIA ? `interpretada por IA` : `conservada por humano`;
+    }
+
+    const total = state.countHuman + state.countIA;
+    const porcentajeIA = total > 0 ? (state.countIA / total) * 100 : 0;
+    $('barFill').style.width = `${porcentajeIA}%`;
+
+    renderizarHistorial();
+  }
+
+  function glitch() {
+    const wrap = $('imgWrap');
+    wrap.classList.add('glitching');
+    setTimeout(() => {
+      wrap.classList.remove('glitching');
+    }, 500);
+  }
+
+  function setLoading(loading) {
+    if (loading) {
+      $('overlay').classList.add('active');
+    } else {
+      $('overlay').classList.remove('active');
+    }
+  }
+
+  function manejarDecisionHumana() {
+    state.version++;
+    state.countHuman++;
+    
+    glitch();
+    
+    state.history.push({
+      src: state.currentSrc,
+      isIA: false,
+      version: state.version,
+      text: "Decisión humana: Se conservó el estado actual sin alteraciones algorítmicas."
+    });
+    
+    if (state.history.length > 16) state.history.shift();
+    
+    $('feedback').className = 'feedback';
+    $('feedback').textContent = 'Conservaste la imagen. Los datos permanecen estables por ahora.';
+    
+    actualizarInterfaz();
+  }
+
+  async function manejarIntervencionIA() {
+    setLoading(true);
+    $('feedback').textContent = '';
+
+    try {
+      // Nota: Para enviar la foto a la API de Anthropic de forma directa, 
+      // eventualmente sí necesitarás convertirla a Base64 dentro de la petición.
+      // Por ahora, este fetch intentará conectar con tu llave.
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': 'TU_API_KEY_AQUI', 
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 150,
+          system: `Actúa como una inteligencia artificial fría y analítica. Analiza cómo la red interpreta la identidad de la figura en la imagen basándose en datos web. Usa un tono clínico, libre de juicios morales.`,
+          messages: [{
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Interpretá la identidad de la figura en esta imagen según los datos que circulan sobre ella en la red."
+              }
+            ]
+          }]
+        })
+      });
+
+      const data = await response.json();
+      const iaText = data.content?.[0]?.text || "(sin respuesta)";
+
+      state.version++;
+      state.countIA++;
+      
+      state.history.push({ 
+        src: state.currentSrc, 
+        isIA: true, 
+        version: state.version, 
+        text: iaText 
+      });
+      
+      if (state.history.length > 16) state.history.shift();
+
+      glitch();
+
+      const fb = $('feedback');
+      fb.className = 'feedback ia-response';
+      fb.textContent = iaText;
+
+    } catch(err) {
+      console.error(err);
+      $('feedback').className = 'feedback';
+      $('feedback').textContent = 'Error al conectar con la IA. Intentá de nuevo.';
+    }
+
+    setLoading(false);
+    actualizarInterfaz();
+  }
+
+  function renderizarHistorial() {
+    const grid = $('historyGrid');
+    grid.innerHTML = '';
+
+    if (state.history.length === 0) {
+      grid.innerHTML = '<p style="color:var(--dim); font-size:11px;">Sin intervenciones aún.</p>';
+      return;
+    }
+
+    state.history.forEach(item => {
+      const thumb = document.createElement('div');
+      thumb.className = `history-thumb ${item.isIA ? 'is-ia' : ''}`;
+      thumb.title = item.text; 
+
+      const img = document.createElement('img');
+      img.src = item.src;
+      img.alt = `Versión ${item.version}`;
+
+      const num = document.createElement('span');
+      num.className = 'thumb-num';
+      num.textContent = `v${item.version}`;
+
+      thumb.appendChild(img);
+      thumb.appendChild(num);
+      grid.appendChild(thumb);
+    });
+  }
+</script>
