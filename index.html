@@ -23,7 +23,7 @@
     .image-wrap { position: relative; width: 100%; max-width: 500px; aspect-ratio: 4/3; background: #050505; border: 1px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; }
     .image-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; width: 100%; height: 100%; }
     
-    .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.83); display: none; align-items: center; justify-content: center; z-index: 10; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
+    .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; z-index: 10; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); text-align: center; padding: 20px; }
     .overlay.active { display: flex; }
 
     .control-panel { display: flex; flex-direction: column; gap: 24px; }
@@ -46,7 +46,7 @@
     .history-grid { display: flex; flex-wrap: wrap; gap: 12px; }
     .history-thumb { width: 60px; height: 60px; border: 1px solid var(--border); background: #050505; position: relative; cursor: help; overflow: hidden; }
     .history-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.5; }
-    .history-thumb.is-ia img { opacity: 0.8; filter: grayscale(50%) sepia(20%); }
+    .history-thumb.is-ia img { opacity: 0.8; filter: grayscale(30%) sepia(10%); }
     .history-thumb .thumb-num { position: absolute; bottom: 2px; right: 4px; font-size: 8px; color: var(--dim); }
 
     .bar-container { width: 100%; background: #080808; height: 2px; margin-top: 8px; position: relative; }
@@ -73,7 +73,7 @@
   <main>
     <section class="view-panel">
       <div class="image-wrap" id="imgWrap">
-        <div class="overlay" id="overlay">Procesando consulta algorítmica...</div>
+        <div class="overlay" id="overlay">La IA está mutando tu imagen...</div>
         <img id="mainImg" alt="Retrato en transformación" />
       </div>
     </section>
@@ -112,10 +112,12 @@
   </main>
 
   <script>
-    // Nombre de tu imagen vinculada
+    // Configuración base de tus archivos
     const ARCHIVO_FOTO = "JM.png"; 
+    
+    // PEGA ACÁ TU LLAVE DE STABILITY AI ENTRE LAS COMILLAS
+    const STABILITY_API_KEY = "sk-5QJtiXso4yWluFBngucfD7zqDFs6nMWd9c0imF7D731CwiFa"; 
 
-    // Estado inicial de la app
     const state = {
       version: 0,
       countHuman: 0,
@@ -126,7 +128,6 @@
 
     const $ = id => document.getElementById(id);
 
-    // Asegura la carga de elementos sin bloquear la pantalla
     window.addEventListener('DOMContentLoaded', () => {
       $('mainImg').src = state.currentSrc;
       actualizarInterfaz();
@@ -144,7 +145,7 @@
         $('vDesc').textContent = "imagen original";
       } else {
         const ultimo = state.history[state.history.length - 1];
-        $('vDesc').textContent = ultimo.isIA ? `interpretada por IA` : `conservada por humano`;
+        $('vDesc').textContent = ultimo.isIA ? `mutada por algoritmo` : `conservada por humano`;
       }
 
       const total = state.countHuman + state.countIA;
@@ -157,12 +158,11 @@
     function glitch() {
       const wrap = $('imgWrap');
       wrap.classList.add('glitching');
-      setTimeout(() => {
-        wrap.classList.remove('glitching');
-      }, 500);
+      setTimeout(() => { wrap.classList.remove('glitching'); }, 500);
     }
 
-    function setLoading(loading) {
+    function setLoading(loading, texto = "La IA está mutando tu imagen...") {
+      $('overlay').textContent = texto;
       if (loading) {
         $('overlay').classList.add('active');
       } else {
@@ -179,69 +179,83 @@
         src: state.currentSrc,
         isIA: false,
         version: state.version,
-        text: "Decisión humana: Se conservó el estado actual sin alteraciones algorítmicas."
+        text: "Decisión humana: Se conservó la apariencia sin distorsiones matemáticas."
       });
       
       if (state.history.length > 16) state.history.shift();
       
       $('feedback').className = 'feedback';
-      $('feedback').textContent = 'Conservaste la imagen. Los datos permanecen estables por ahora.';
+      $('feedback').textContent = 'Decidiste conservar la imagen intacta. Los pixeles resisten en su estado actual.';
       actualizarInterfaz();
     }
 
     async function manejarIntervencionIA() {
-      setLoading(true);
+      if (STABILITY_API_KEY === "TU_API_KEY_AQUI" || STABILITY_API_KEY === "") {
+        $('feedback').textContent = "Error: Falta configurar la STABILITY_API_KEY en la línea 121 del código.";
+        return;
+      }
+
+      setLoading(true, "Convirtiendo imagen y conectando con Stability AI...");
       $('feedback').textContent = '';
 
       try {
-        const response = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
+        // 1. Cargamos la foto actual en memoria del navegador
+        const imgRes = await fetch(state.currentSrc);
+        const blob = await imgRes.blob();
+
+        // 2. Armamos la petición para enviarle la imagen física a la IA
+        const formData = new FormData();
+        formData.append("image", blob);
+        // El "prompt" es lo que le ordena a la IA cómo alterar el rostro
+        formData.append("prompt", "cyberpunk digital glitch art distortion, matrix code texture, green and red chromatic aberration, raw algorithmic error, human face melting into data streams, data moshing, net art aesthetic");
+        formData.append("search_prompt", "human face, person, portrait");
+        formData.append("output_format", "png");
+
+        setLoading(true, "El algoritmo está reescribiendo la cara...");
+
+        // Llamamos al modelo "Search and Replace" que altera áreas basándose en el prompt
+        const response = await fetch("https://api.stability.ai/v2beta/stable-image/edit/search-and-replace", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': 'TU_API_KEY_AQUI', 
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true'
+            "Authorization": `Bearer ${STABILITY_API_KEY}`,
+            "Accept": "image/*"
           },
-          body: JSON.stringify({
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 150,
-            system: `Actúa como una IA clínica y analítica. Describe los patrones de datos e identidad en la red asociados a la figura.`,
-            messages: [{
-              role: "user",
-              content: [
-                {
-                  type: "text",
-                  text: "Interpretá la identidad de la figura en esta imagen según los datos que circulan en la red."
-                }
-              ]
-            }]
-          })
+          body: formData
         });
 
-        const data = await response.json();
-        const iaText = data.content?.[0]?.text || "(sin respuesta)";
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.errors ? errData.errors.join(", ") : "Error en el servidor de IA");
+        }
+
+        // 3. Recibimos la nueva imagen procesada en binario
+        const imageBlob = await response.blob();
+        const nuevaUrl = URL.createObjectURL(imageBlob);
 
         state.version++;
         state.countIA++;
         
+        // Actualizamos la imagen actual en pantalla con la mutada
+        state.currentSrc = nuevaUrl;
+        $('mainImg').src = state.currentSrc;
+
         state.history.push({ 
           src: state.currentSrc, 
           isIA: true, 
           version: state.version, 
-          text: iaText 
+          text: "Mutación algorítmica completada. Estructura física reducida a variables digitales." 
         });
         
         if (state.history.length > 16) state.history.shift();
         glitch();
 
-        const fb = $('feedback');
-        fb.className = 'feedback ia-response';
-        fb.textContent = iaText;
+        $('feedback').className = 'feedback ia-response';
+        $('feedback').textContent = `[SISTEMA]: Intervención exitosa.\nLa máquina ha interpretado el rostro aplicando capas de ruido, aberración cromática y deconstrucción de datos de red.`;
 
       } catch(err) {
         console.error(err);
         $('feedback').className = 'feedback';
-        $('feedback').textContent = 'Error al conectar con la IA. El sistema requiere configuración de API Key.';
+        $('feedback').textContent = `Error al mutar la imagen: ${err.message}\nVerificá tus créditos en Stability AI o tu API Key.`;
       }
 
       setLoading(false);
