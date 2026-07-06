@@ -101,14 +101,8 @@
   <script>
     const ARCHIVO_FOTO = "JM.png"; 
     
-    // Lista automática del 1 al 29 respetando tus extensiones específicas
-    const MIS_IMAGENES_IA = Array.from({length: 29}, (_, i) => {
-      const num = i + 1;
-      if (num === 1 || num === 10 || num === 12 || num === 13) {
-        return `${num}.jpg`;
-      }
-      return `${num}.png`;
-    });
+    // Lista automática del 1 al 29 estrictamente en formato .png
+    const MIS_IMAGENES_IA = Array.from({length: 29}, (_, i) => `${i + 1}.png`);
 
     const textosDeProcesamiento = [
       "Procesando registros visuales...",
@@ -116,7 +110,6 @@
       "Asignando variables estéticas..."
     ];
 
-    // state.iaIndex nos va a servir para llevar la cuenta de por qué foto va
     const state = { version: 0, countHuman: 0, countIA: 0, iaIndex: 0, history: [], currentSrc: ARCHIVO_FOTO };
     const $ = id => document.getElementById(id);
 
@@ -157,7 +150,7 @@
       state.version = 0;
       state.countHuman = 0;
       state.countIA = 0;
-      state.iaIndex = 0; // Reinicia el orden de las fotos
+      state.iaIndex = 0;
       state.currentSrc = ARCHIVO_FOTO;
       $('mainImg').src = state.currentSrc;
       state.history = [{ src: ARCHIVO_FOTO, isIA: false, version: 0, text: "Estado v0: Imagen original cargada." }];
@@ -174,7 +167,6 @@
     }
 
     function manejarIntervencionIA() {
-      // Si ya mostró las 29 imágenes, vuelve a arrancar desde la primera (1.jpg)
       if (state.iaIndex >= MIS_IMAGENES_IA.length) {
         state.iaIndex = 0;
       }
@@ -187,9 +179,8 @@
         setLoading(true, fraseDeCarga);
         
         setTimeout(() => {
-          // Selecciona la foto que toca en orden secuencial
           const fotoElegida = MIS_IMAGENES_IA[state.iaIndex];
-          state.iaIndex++; // Suma uno para la próxima vez
+          state.iaIndex++;
 
           state.version++;
           state.countIA++;
