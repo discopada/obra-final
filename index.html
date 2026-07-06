@@ -23,7 +23,7 @@
     .image-wrap { position: relative; width: 100%; max-width: 500px; aspect-ratio: 4/3; background: #050505; border: 1px solid var(--border); overflow: hidden; display: flex; align-items: center; justify-content: center; }
     .image-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; width: 100%; height: 100%; }
     
-    .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.88); display: none; align-items: center; justify-content: center; z-index: 10; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); text-align: center; padding: 20px; font-weight: bold; }
+    .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 10; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); text-align: center; padding: 20px; font-weight: bold; }
     .overlay.active { display: flex; }
 
     .control-panel { display: flex; flex-direction: column; gap: 20px; }
@@ -71,13 +71,13 @@
 
   <header>
     <h1>Cómo te va a recordar la máquina</h1>
-    <div>NET ART</div>
+    <div>NET ART // INTERACTIVE INTERPRETATION SYSTEM</div>
   </header>
 
   <main>
     <section class="view-panel">
       <div class="image-wrap" id="imgWrap">
-        <div class="overlay" id="overlay">Iniciando rastreo de red...</div>
+        <div class="overlay" id="overlay">Conectando con servidor de inferencia...</div>
         <img id="mainImg" alt="Retrato en transformación" />
       </div>
     </section>
@@ -94,7 +94,10 @@
         </div>
       </div>
 
-      
+      <div class="input-box">
+        <label for="userWord">Inyectar vector/palabra clave al algoritmo (opcional):</label>
+        <input type="text" id="userWord" placeholder="Ej: Motosierra, Libertad, Casta, Ruido..." maxlength="30" />
+      </div>
 
       <div class="actions">
         <button id="btnKeep">Dejar como está</button>
@@ -113,47 +116,21 @@
   <script>
     const ARCHIVO_FOTO = "JM.png"; 
     
-    // Dejamos esto vacío para que GitHub no bloquee el deploy. El sistema lo pedirá dinámicamente en el navegador.
-    let hfTokenDinamico = ""; 
+    // Generamos automáticamente el array con tus fotos nombradas del 1 al 29 en .png
+    const MIS_IMAGENES_IA = Array.from({length: 29}, (_, i) => `${i + 1}.png`);
 
     const discursosInternet = [
-      {
-        consola: "[SISTEMA]: Rastreando tendencias en X y transmisiones de streaming...\n[DATOS]: Detectada alta densidad de términos macroeconómicos y debates de agenda.",
-        pantalla: "Procesando discursos económicos y debates de opinión pública...",
-        promptIA: "glitch net art style raw photographic closeup of Javier Milei, mechanical structural lines, deep facial deconstruction, tense rigid look, dynamic angular algorithmic distortion, high-contrast digital artifacts"
-      },
-      {
-        consola: "[SISTEMA]: Escaneando portales de noticias internacionales y debates geopolíticos...\n[DATOS]: Indexando registros sobre polarización y tensión en medios digitales.",
-        pantalla: "Analizando sobrecarga de datos informativos globales...",
-        promptIA: "fragmented net art style portrait photo of Javier Milei, overlapping visual data blocks, structural data fracture, informational matrix pattern distortion, surreal digital erosion"
-      },
-      {
-        consola: "[SISTEMA]: Filtrando interacciones de algoritmos y foros cibernéticos...\n[DATOS]: Extrayendo conceptos estéticos de subculturas digitales y corrientes ideológicas.",
-        pantalla: "Traduciendo corrientes ideológicas digitales a geometría...",
-        promptIA: "surreal pixelated abstract portrait photo of Javier Milei, algorithmic evolutionary morphing, bold internet culture contours, high contrast conceptual layout, net art installation style"
-      }
+      { pr: "Procesando flujo de opinión en redes...", cons: "[SISTEMA]: Rastreando tendencias en X y transmisiones de streaming...\n[DATOS]: Detectada alta densidad de términos macroeconómicos y debates de agenda.\n[PROCESO]: Decodificando fisonomía mediante red neuronal difusa." },
+      { pr: "Analizando sobrecarga de datos informativos...", cons: "[SISTEMA]: Escaneando portales de noticias internacionales y debates geopolíticos...\n[DATOS]: Indexando registros sobre polarización y tensión en medios digitales.\n[PROCESO]: Modificando matriz de pixeles por acumulación de vectores." },
+      { pr: "Traduciendo corrientes ideológicas a geometría...", cons: "[SISTEMA]: Filtrando interacciones de algoritmos y foros cibernéticos...\n[DATOS]: Extrayendo conceptos estéticos de subculturas web.\n[PROCESO]: Simulación completada con éxito." }
     ];
 
-    const state = {
-      version: 0,
-      countHuman: 0,
-      countIA: 0,
-      history: [], 
-      currentSrc: ARCHIVO_FOTO
-    };
-
+    const state = { version: 0, countHuman: 0, countIA: 0, history: [], currentSrc: ARCHIVO_FOTO };
     const $ = id => document.getElementById(id);
 
     window.addEventListener('DOMContentLoaded', () => {
       $('mainImg').src = state.currentSrc;
-      
-      state.history.push({
-        src: ARCHIVO_FOTO,
-        isIA: false,
-        version: 0,
-        text: "Estado v0: Imagen original cargada en el sistema."
-      });
-
+      state.history.push({ src: ARCHIVO_FOTO, isIA: false, version: 0, text: "Estado v0: Imagen original cargada." });
       actualizarInterfaz();
       
       $('btnKeep').addEventListener('click', manejarDecisionHumana);
@@ -178,13 +155,10 @@
       setTimeout(() => { wrap.classList.remove('glitching'); }, 500);
     }
 
-    function setLoading(loading, texto = "La IA está mutando tu imagen...") {
+    function setLoading(loading, texto = "") {
       $('overlay').textContent = texto;
-      if (loading) {
-        $('overlay').classList.add('active');
-      } else {
-        $('overlay').classList.remove('active');
-      }
+      if (loading) $('overlay').classList.add('active');
+      else $('overlay').classList.remove('active');
     }
 
     function reiniciarObra() {
@@ -194,14 +168,7 @@
       state.currentSrc = ARCHIVO_FOTO;
       $('mainImg').src = state.currentSrc;
       $('userWord').value = ''; 
-      
-      state.history = [{
-        src: ARCHIVO_FOTO,
-        isIA: false,
-        version: 0,
-        text: "Estado v0: Imagen original cargada en el sistema."
-      }];
-      
+      state.history = [{ src: ARCHIVO_FOTO, isIA: false, version: 0, text: "Estado v0: Imagen original cargada." }];
       $('feedback').className = 'feedback';
       $('feedback').textContent = 'Sistema reiniciado por el operador. Volviendo al estado v0 original.';
       actualizarInterfaz();
@@ -211,126 +178,70 @@
       state.version++;
       state.countHuman++;
       glitch();
-      
-      state.history.push({
-        src: state.currentSrc,
-        isIA: false,
-        version: state.version,
-        text: `Decisión humana v${state.version}: Se conservó la apariencia actual.`
-      });
-      
+      state.history.push({ src: state.currentSrc, isIA: false, version: state.version, text: `Decisión humana v${state.version}: Conservó apariencia.` });
       if (state.history.length > 16) state.history.shift();
-      
       $('feedback').className = 'feedback';
       $('feedback').textContent = 'Decidiste conservar la imagen intacta. Los pixeles resisten en su estado actual.';
       actualizarInterfaz();
     }
 
-    async function manejarIntervencionIA() {
-      // Si no tenemos el token ingresado, lo pedimos de manera dinámica mediante prompt
-      if (!hfTokenDinamico || hfTokenDinamico.trim() === "") {
-        const userKey = prompt("[ACCESO REQUERIDO]: Por favor, ingrese el Access Token de Hugging Face (hf_...) para conectar la obra con el sistema de inferencia:");
-        if (userKey && userKey.trim().startsWith("hf_")) {
-          hfTokenDinamico = userKey.trim();
-        } else {
-          $('feedback').textContent = "[ERROR DE AUTENTICACIÓN]: Token inválido o cancelado por el operador. No se puede conectar con el sistema de inferencia digital.";
-          return;
-        }
-      }
-
-      const palabraInyectada = $('userWord').value.trim();
+    function manejarIntervencionIA() {
+      const palabra = $('userWord').value.trim();
       const discursoElegido = discursosInternet[Math.floor(Math.random() * discursosInternet.length)];
       
-      let promptFinal = "";
-      let consolaTexto = "";
-      let pantallaTexto = "";
-
-      if (palabraInyectada !== "") {
-        consolaTexto = `[SISTEMA]: Intervención de operador externo.\n[VECTOR INYECTADO]: '${palabraInyectada}'. Reprogramando red neuronal...`;
-        pantallaTexto = `Inyectando término '${palabraInyectada.toUpperCase()}' en la fisonomía...`;
-        promptFinal = `glitch net art style abstract portrait photo of Javier Milei distorted by the concept of ${palabraInyectada}, overlapping data data blocks, concept art layout, deep structural modification`;
-      } else {
-        consolaTexto = discursoElegido.consola;
-        pantallaTexto = discursoElegido.pantalla;
-        promptFinal = discursoElegido.promptIA;
-      }
-
       setLoading(true, "Rastreando variables...");
       $('feedback').textContent = '';
 
-      try {
-        setLoading(true, pantallaTexto);
-
-        const response = await fetch(
-          "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
-          {
-            headers: { 
-              Authorization: `Bearer ${hfTokenDinamico}`,
-              "Content-Type": "application/json"
-            },
-            method: "POST",
-            body: JSON.stringify({ inputs: promptFinal }),
-          }
-        );
-
-        if (!response.ok) {
-          if (response.status === 401) {
-            hfTokenDinamico = ""; // Reseteamos si el token ingresado era erróneo
-            throw new Error("El token ingresado no es válido en los servidores de Hugging Face.");
-          }
-          throw new Error("El servidor gratuito está sobrecargado. Reintentá en unos segundos.");
-        }
-
-        const imageBlob = await response.blob();
-        const nuevaUrl = URL.createObjectURL(imageBlob);
-
-        state.version++;
-        state.countIA++;
+      // Primera simulación de carga lenta
+      setTimeout(() => {
+        setLoading(true, discursoElegido.pr);
         
-        state.currentSrc = nuevaUrl;
-        $('mainImg').src = state.currentSrc;
+        // Segunda fase de simulación de cálculo
+        setTimeout(() => {
+          // Elige una de tus 29 fotos pre-hechas al azar
+          const fotoElegida = MIS_IMAGENES_IA[Math.floor(Math.random() * MIS_IMAGENES_IA.length)];
+          
+          state.version++;
+          state.countIA++;
+          state.currentSrc = fotoElegida;
+          $('mainImg').src = state.currentSrc;
 
-        state.history.push({ 
-          src: state.currentSrc, 
-          isIA: true, 
-          version: state.version, 
-          text: palabraInyectada !== "" ? `Mutación IA v${state.version}: Inyección de vector '${palabraInyectada}'.` : `Mutación IA v${state.version}: Deformación por flujo de opinión.` 
-        });
-        
-        if (state.history.length > 16) state.history.shift();
-        glitch();
+          state.history.push({
+            src: state.currentSrc,
+            isIA: true,
+            version: state.version,
+            text: palabra !== "" ? `Mutación IA v${state.version} (Vector: '${palabra}')` : `Mutación IA v${state.version}`
+          });
 
-        $('feedback').className = 'feedback ia-response';
-        $('feedback').textContent = consolaTexto + `\n\n[PROCESAMIENTO]: Rostro reinterpretado conceptualmente según los vectores cargados.`;
+          if (state.history.length > 16) state.history.shift();
+          glitch();
+          setLoading(false);
 
-      } catch(err) {
-        console.error(err);
-        $('feedback').className = 'feedback';
-        $('feedback').textContent = `Error al procesar con IA libre: ${err.message}`;
-      }
-
-      setLoading(false);
-      actualizarInterfaz();
+          $('feedback').className = 'feedback ia-response';
+          if (palabra !== "") {
+            $('feedback').textContent = `[SISTEMA]: Intervención de operador externo.\n[VECTOR INYECTADO]: '${palabra.toUpperCase()}'. Reprogramando red neuronal...\n\n[PROCESAMIENTO]: Rostro reinterpretado de forma abstracta según el concepto cargado.`;
+          } else {
+            $('feedback').textContent = discursoElegido.cons + `\n\n[PROCESAMIENTO]: Rostro reinterpretado de forma abstracta según los flujos de opinión.`;
+          }
+          
+          actualizarInterfaz();
+        }, 1200);
+      }, 800);
     }
 
     function renderizarHistorial() {
       const grid = $('historyGrid');
       grid.innerHTML = '';
-
       state.history.forEach(item => {
         const thumb = document.createElement('div');
         thumb.className = `history-thumb ${item.isIA ? 'is-ia' : ''}`;
-        thumb.title = item.text; 
-
+        thumb.title = item.text;
         const img = document.createElement('img');
         img.src = item.src;
-        img.alt = `Versión ${item.version}`;
-
+        thumb.appendChild(img);
         const num = document.createElement('span');
         num.className = 'thumb-num';
         num.textContent = `v${item.version}`;
-
-        thumb.appendChild(img);
         thumb.appendChild(num);
         grid.appendChild(thumb);
       });
