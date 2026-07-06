@@ -34,12 +34,7 @@
     .count-val { font-weight: bold; color: var(--fg); }
     .count-val.ia { color: var(--accent); }
 
-    .input-box { display: flex; flex-direction: column; gap: 6px; }
-    .input-box label { font-size: 10px; text-transform: uppercase; color: var(--dim); letter-spacing: 0.1em; }
-    .input-box input { background: #020202; border: 1px solid var(--border); color: var(--fg); font-family: var(--mono); padding: 12px; font-size: 12px; transition: border-color 0.2s ease; }
-    .input-box input:focus { outline: none; border-color: var(--accent); color: var(--accent); }
-
-    .actions { display: flex; gap: 16px; }
+    .actions { display: flex; gap: 16px; margin-top: 10px; }
     button { flex: 1; background: transparent; border: 1px solid var(--fg); color: var(--fg); padding: 14px; font-family: var(--mono); cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; transition: all 0.2s ease; }
     button:hover { background: var(--fg); color: var(--bg); }
     button.btn-accent { border-color: var(--accent); color: var(--accent); }
@@ -77,7 +72,7 @@
   <main>
     <section class="view-panel">
       <div class="image-wrap" id="imgWrap">
-        <div class="overlay" id="overlay">Conectando con servidor de inferencia...</div>
+        <div class="overlay" id="overlay">Generando nueva interpretación...</div>
         <img id="mainImg" alt="Retrato en transformación" />
       </div>
     </section>
@@ -92,11 +87,6 @@
           <span class="count-label">Algoritmo (IA):</span>
           <span class="count-val ia" id="cIA">0</span>
         </div>
-      </div>
-
-      <div class="input-box">
-        <label for="userWord">Inyectar vector/palabra clave al algoritmo (opcional):</label>
-        <input type="text" id="userWord" placeholder="Ej: Motosierra, Libertad, Casta, Ruido..." maxlength="30" />
       </div>
 
       <div class="actions">
@@ -116,13 +106,13 @@
   <script>
     const ARCHIVO_FOTO = "JM.png"; 
     
-    // Generamos automáticamente el array con tus fotos nombradas del 1 al 29 en .png
+    // Lista automática del 1 al 29 en formato .png
     const MIS_IMAGENES_IA = Array.from({length: 29}, (_, i) => `${i + 1}.png`);
 
     const discursosInternet = [
-      { pr: "Procesando flujo de opinión en redes...", cons: "[SISTEMA]: Rastreando tendencias en X y transmisiones de streaming...\n[DATOS]: Detectada alta densidad de términos macroeconómicos y debates de agenda.\n[PROCESO]: Decodificando fisonomía mediante red neuronal difusa." },
-      { pr: "Analizando sobrecarga de datos informativos...", cons: "[SISTEMA]: Escaneando portales de noticias internacionales y debates geopolíticos...\n[DATOS]: Indexando registros sobre polarización y tensión en medios digitales.\n[PROCESO]: Modificando matriz de pixeles por acumulación de vectores." },
-      { pr: "Traduciendo corrientes ideológicas a geometría...", cons: "[SISTEMA]: Filtrando interacciones de algoritmos y foros cibernéticos...\n[DATOS]: Extrayendo conceptos estéticos de subculturas web.\n[PROCESO]: Simulación completada con éxito." }
+      { pr: "Procesando registros visuales...", cons: "[REGISTRO]: Mutación de pixeles completada de forma aleatoria.\n[PROCESAMIENTO]: Rostro reinterpretado bajo la estética de red generativa." },
+      { pr: "Ejecutando deconstrucción de la imagen...", cons: "[REGISTRO]: Reordenamiento estético finalizado.\n[PROCESAMIENTO]: Nuevas capas visuales asignadas al retrato actual." },
+      { pr: "Asignando variables estéticas aleatorias...", cons: "[REGISTRO]: Renderizado final con éxito.\n[PROCESAMIENTO]: Retrato distorsionado según los parámetros de la base de imágenes." }
     ];
 
     const state = { version: 0, countHuman: 0, countIA: 0, history: [], currentSrc: ARCHIVO_FOTO };
@@ -167,7 +157,6 @@
       state.countIA = 0;
       state.currentSrc = ARCHIVO_FOTO;
       $('mainImg').src = state.currentSrc;
-      $('userWord').value = ''; 
       state.history = [{ src: ARCHIVO_FOTO, isIA: false, version: 0, text: "Estado v0: Imagen original cargada." }];
       $('feedback').className = 'feedback';
       $('feedback').textContent = 'Sistema reiniciado por el operador. Volviendo al estado v0 original.';
@@ -186,19 +175,15 @@
     }
 
     function manejarIntervencionIA() {
-      const palabra = $('userWord').value.trim();
       const discursoElegido = discursosInternet[Math.floor(Math.random() * discursosInternet.length)];
       
-      setLoading(true, "Rastreando variables...");
+      setLoading(true, "Iniciando proceso...");
       $('feedback').textContent = '';
 
-      // Primera simulación de carga lenta
       setTimeout(() => {
         setLoading(true, discursoElegido.pr);
         
-        // Segunda fase de simulación de cálculo
         setTimeout(() => {
-          // Elige una de tus 29 fotos pre-hechas al azar
           const fotoElegida = MIS_IMAGENES_IA[Math.floor(Math.random() * MIS_IMAGENES_IA.length)];
           
           state.version++;
@@ -210,7 +195,7 @@
             src: state.currentSrc,
             isIA: true,
             version: state.version,
-            text: palabra !== "" ? `Mutación IA v${state.version} (Vector: '${palabra}')` : `Mutación IA v${state.version}`
+            text: `Mutación IA v${state.version}`
           });
 
           if (state.history.length > 16) state.history.shift();
@@ -218,11 +203,7 @@
           setLoading(false);
 
           $('feedback').className = 'feedback ia-response';
-          if (palabra !== "") {
-            $('feedback').textContent = `[SISTEMA]: Intervención de operador externo.\n[VECTOR INYECTADO]: '${palabra.toUpperCase()}'. Reprogramando red neuronal...\n\n[PROCESAMIENTO]: Rostro reinterpretado de forma abstracta según el concepto cargado.`;
-          } else {
-            $('feedback').textContent = discursoElegido.cons + `\n\n[PROCESAMIENTO]: Rostro reinterpretado de forma abstracta según los flujos de opinión.`;
-          }
+          $('feedback').textContent = discursoElegido.cons;
           
           actualizarInterfaz();
         }, 1200);
@@ -242,6 +223,12 @@
         const num = document.createElement('span');
         num.className = 'thumb-num';
         num.textContent = `v${item.version}`;
+        thumb.appendChild(num);
+        grid.appendChild(num === "" ? "" : num); // Corrección semántica interna
+        thumb.appendChild(num);
+        // Limpieza para evitar duplicados en el DOM del thumbnail
+        thumb.innerHTML = '';
+        thumb.appendChild(img);
         thumb.appendChild(num);
         grid.appendChild(thumb);
       });
