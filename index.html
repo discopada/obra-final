@@ -26,7 +26,7 @@
     .overlay { position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.92); display: none; align-items: center; justify-content: center; z-index: 10; font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); text-align: center; padding: 20px; font-weight: bold; }
     .overlay.active { display: flex; }
 
-    .control-panel { display: flex; flex-direction: column; gap: 20px; }
+    .control-panel { display: flex; flex-direction: column; gap: 20px; justify-content: center; }
     
     .counters-box { display: flex; justify-content: space-between; border: 1px solid var(--border); padding: 12px 16px; background: #030303; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; }
     .count-item { display: flex; gap: 8px; }
@@ -34,14 +34,11 @@
     .count-val { font-weight: bold; color: var(--fg); }
     .count-val.ia { color: var(--accent); }
 
-    .actions { display: flex; gap: 16px; margin-top: 10px; }
+    .actions { display: flex; gap: 16px; }
     button { flex: 1; background: transparent; border: 1px solid var(--fg); color: var(--fg); padding: 14px; font-family: var(--mono); cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; font-size: 11px; transition: all 0.2s ease; }
     button:hover { background: var(--fg); color: var(--bg); }
     button.btn-accent { border-color: var(--accent); color: var(--accent); }
     button.btn-accent:hover { background: var(--accent); color: var(--fg); }
-
-    .feedback { border: 1px solid var(--border); min-height: 120px; padding: 16px; font-size: 12px; color: #888; background: #010101; white-space: pre-wrap; line-height: 1.5; }
-    .feedback.ia-response { color: #ccc; border-color: #333; }
 
     .history-section { grid-column: 1 / -1; margin-top: 16px; border-top: 1px solid var(--border); padding-top: 32px; }
     .history-section h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px; color: var(--dim); }
@@ -93,8 +90,6 @@
         <button id="btnKeep">Dejar como está</button>
         <button id="btnIA" class="btn-accent">Dejar que la IA la interprete</button>
       </div>
-
-      <div class="feedback" id="feedback">Seleccioná una acción para interactuar con la obra.</div>
     </section>
 
     <section class="history-section">
@@ -109,10 +104,10 @@
     // Lista automática del 1 al 29 en formato .png
     const MIS_IMAGENES_IA = Array.from({length: 29}, (_, i) => `${i + 1}.png`);
 
-    const discursosInternet = [
-      { pr: "Procesando registros visuales...", cons: "[REGISTRO]: Mutación de pixeles completada de forma aleatoria.\n[PROCESAMIENTO]: Rostro reinterpretado bajo la estética de red generativa." },
-      { pr: "Ejecutando deconstrucción de la imagen...", cons: "[REGISTRO]: Reordenamiento estético finalizado.\n[PROCESAMIENTO]: Nuevas capas visuales asignadas al retrato actual." },
-      { pr: "Asignando variables estéticas aleatorias...", cons: "[REGISTRO]: Renderizado final con éxito.\n[PROCESAMIENTO]: Retrato distorsionado según los parámetros de la base de imágenes." }
+    const textosDeProcesamiento = [
+      "Procesando registros visuales...",
+      "Ejecutando deconstrucción de la imagen...",
+      "Asignando variables estéticas aleatorias..."
     ];
 
     const state = { version: 0, countHuman: 0, countIA: 0, history: [], currentSrc: ARCHIVO_FOTO };
@@ -158,8 +153,6 @@
       state.currentSrc = ARCHIVO_FOTO;
       $('mainImg').src = state.currentSrc;
       state.history = [{ src: ARCHIVO_FOTO, isIA: false, version: 0, text: "Estado v0: Imagen original cargada." }];
-      $('feedback').className = 'feedback';
-      $('feedback').textContent = 'Sistema reiniciado por el operador. Volviendo al estado v0 original.';
       actualizarInterfaz();
     }
 
@@ -169,19 +162,16 @@
       glitch();
       state.history.push({ src: state.currentSrc, isIA: false, version: state.version, text: `Decisión humana v${state.version}: Conservó apariencia.` });
       if (state.history.length > 16) state.history.shift();
-      $('feedback').className = 'feedback';
-      $('feedback').textContent = 'Decidiste conservar la imagen intacta. Los pixeles resisten en su estado actual.';
       actualizarInterfaz();
     }
 
     function manejarIntervencionIA() {
-      const discursoElegido = discursosInternet[Math.floor(Math.random() * discursosInternet.length)];
+      const fraseDeCarga = textosDeProcesamiento[Math.floor(Math.random() * textosDeProcesamiento.length)];
       
       setLoading(true, "Iniciando proceso...");
-      $('feedback').textContent = '';
 
       setTimeout(() => {
-        setLoading(true, discursoElegido.pr);
+        setLoading(true, fraseDeCarga);
         
         setTimeout(() => {
           const fotoElegida = MIS_IMAGENES_IA[Math.floor(Math.random() * MIS_IMAGENES_IA.length)];
@@ -201,9 +191,6 @@
           if (state.history.length > 16) state.history.shift();
           glitch();
           setLoading(false);
-
-          $('feedback').className = 'feedback ia-response';
-          $('feedback').textContent = discursoElegido.cons;
           
           actualizarInterfaz();
         }, 1200);
@@ -217,17 +204,14 @@
         const thumb = document.createElement('div');
         thumb.className = `history-thumb ${item.isIA ? 'is-ia' : ''}`;
         thumb.title = item.text;
+        
         const img = document.createElement('img');
         img.src = item.src;
-        thumb.appendChild(img);
+        
         const num = document.createElement('span');
         num.className = 'thumb-num';
         num.textContent = `v${item.version}`;
-        thumb.appendChild(num);
-        grid.appendChild(num === "" ? "" : num); // Corrección semántica interna
-        thumb.appendChild(num);
-        // Limpieza para evitar duplicados en el DOM del thumbnail
-        thumb.innerHTML = '';
+        
         thumb.appendChild(img);
         thumb.appendChild(num);
         grid.appendChild(thumb);
